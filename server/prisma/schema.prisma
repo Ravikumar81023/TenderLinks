@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:RAVIkumar%40810234@localhost:3306/tenderlink"
+}
+
+model AdminUser {
+  id              Int         @id @default(autoincrement())
+  email           String      @unique @db.VarChar(191)
+  password        String
+  role            UserRole
+  currentToken    String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  adminedByUserId Int?
+  adminedBy       AdminUser?  @relation("AdminUser", fields: [adminedByUserId], references: [id])
+  adminedUsers    AdminUser[] @relation("AdminUser")
+}
+
+model Analytics {
+  id         Int          @id @default(autoincrement())
+  userId     Int
+  ipAddress  String
+  loginTime  DateTime
+  logoutTime DateTime?
+  pageViews  Int          @default(0)
+  timeSpent  Int          @default(0)
+  location   String?
+  createdAt  DateTime     @default(now())
+  user       CustomerUser @relation(fields: [userId], references: [id])
+}
+
+model CustomerUser {
+  id                   Int              @id @default(autoincrement())
+  email                String           @unique @db.VarChar(191)
+  password             String
+  companyName          String?
+  phoneNumbers         Json             // changed from String[]
+  sectorId             Int?
+  locationId           Int?
+  subscriptionValidity DateTime?
+  annualTurnover       Decimal          @db.Decimal(18, 2)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  subscriptionTier     SubscriptionTier @default(GUEST)
+  lastLoginTime        DateTime?
+  mostUsedIpAddress    String?
+  serviceValidity      DateTime?
+  analytics            Analytics[]
+  complaints           Complaint[]
+  customerNotes        CustomerNote[]
+  location             Location?        @relation(fields: [locationId], references: [id])
+  sector               Sector?          @relation(fields: [sectorId], references: [id])
+  documents            Document[]
+}
+
+model Sector {
+  id      Int            @id @default(autoincrement())
+  name    String         @unique @db.VarChar(191)
+  users   CustomerUser[]
+  tenders Tender[]
+}
+
+model Location {
+  id       Int            @id @default(autoincrement())
+  state    String
+  district String
+  city     String?
+  users    CustomerUser[]
+  tenders  Tender[]
+}
+
+model Tender {
+  id                   Int        @id @default(autoincrement())
+  title                String
+  description          String
+  value                Decimal    @db.Decimal(18, 2)
+  sectorId             Int
+  locationId           Int
+  expiryDate           DateTime
+  createdAt            DateTime   @default(now())
+  biddingType          String
+  competitionType      String
+  documentFees         String?
+  emd                  Decimal?   @db.Decimal(18, 2)
+  lastDateOfSubmission DateTime
+  publishDate          DateTime
+  tenderBrief          String
+  tenderID             String     @unique @db.VarChar(191)
+  tenderNo             String
+  tenderingAuthority   String
+  documents            Document[]
+  location             Location   @relation(fields: [locationId], references: [id])
+  sector               Sector     @relation(fields: [sectorId], references: [id])
+}
+
+model Document {
+  id        Int           @id @default(autoincrement())
+  name      String
+  path      String
+  type      String
+  tenderId  Int?
+  createdAt DateTime      @default(now())
+  userId    Int?
+  tender    Tender?       @relation(fields: [tenderId], references: [id])
+  user      CustomerUser? @relation(fields: [userId], references: [id])
+}
+
+model Blog {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  image       String?
+  video       String?
+  uploadDate  DateTime @default(now())
+  status      String   @default("Draft")
+}
+
+model Address {
+  id           Int      @id @default(autoincrement())
+  state        String
+  district     String
+  city         String
+  phoneNumbers Json     // changed from String[]
+  landmark     String?
+  isMainOffice Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Contact {
+  id          Int      @id @default(autoincrement())
+  title       String
+  phoneNumber String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model About {
+  id               Int      @id @default(autoincrement())
+  content          String
+  totalTenderValue Decimal  @default(0) @db.Decimal(18, 2)
+  totalTenderCount Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Complaint {
+  id             Int           @id @default(autoincrement())
+  name           String
+  companyName    String?
+  phoneNumber    String
+  email          String
+  message        String
+  createdAt      DateTime      @default(now())
+  customerUserId Int?
+  updatedAt      DateTime      @updatedAt
+  CustomerUser   CustomerUser? @relation(fields: [customerUserId], references: [id])
+}
+
+model CustomerNote {
+  id        Int          @id @default(autoincrement())
+  content   String
+  userId    Int
+  createdAt DateTime     @default(now())
+  user      CustomerUser @relation(fields: [userId], references: [id])
+}
+
+model CA {
+  id          Int    @id @default(autoincrement())
+  name        String
+  experience  Int
+  phoneNumber String
+  state       String
+  district    String
+  city        String
+}
+
+model Service {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String
+  image       String?
+  video       String?
+}
+
+model SocialMedia {
+  id           Int    @id @default(autoincrement())
+  platformName String
+  link         String
+  logo         String
+}
+
+model SliderImage {
+  id        Int      @id @default(autoincrement())
+  imageUrl  String
+  createdAt DateTime @default(now())
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  CONTENT_ADMIN
+  PROJECT_ADMIN
+  CUSTOMER
+}
+
+enum SubscriptionTier {
+  GUEST
+  GOLD
+  PLATINUM
+  DIAMOND
+}
